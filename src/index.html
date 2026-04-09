@@ -1,0 +1,131 @@
+<head></head>
+<body>
+  <div id="app">
+    <div id="topbar">
+      <span id="backendStatus">后端：未检测</span>
+      <span id="cameraStatus">摄像头：未开启</span>
+    </div>
+
+    <div id="mainGrid">
+      <!-- 左侧：绘画画面（摄像头） -->
+      <section class="panel" id="cameraPanel">
+        <div class="panelTitle">🖍️ 绘画画面（摄像头预览）</div>
+
+        <div class="cameraWrap">
+          <div class="cameraShellWrap">
+            <img id="cameraShell" class="cameraShell" alt="camera shell" />
+
+            <div id="cameraViewport" class="cameraViewport hidden">
+              <video id="cameraVideo" autoplay playsinline></video>
+              <img id="capturePreview" alt="capture" />
+
+              <div id="countdownOverlay" class="hidden">
+                <div id="countdownNum">3</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <select id="cameraSelect"></select>
+          <button id="btnStartCamera" class="cuteBtn btn-camera">
+            <span class="btnEmoji"></span>
+            <span class="btnText">开启摄像头</span>
+          </button>
+
+          <button id="btnCapture" class="cuteBtn btn-capture" disabled>
+            <span class="btnEmoji"></span>
+            <span class="btnText">采集一张</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 右侧：AI 视频 -->
+      <section class="panel" id="videoPanel">
+        <div class="panelTitle">🎬 AI 视频</div>
+
+
+        <div class="videoWrap">
+          <!-- 占位层：生成前显示 -->
+          <div id="videoPlaceholder" class="placeholder">
+            <img id="placeholderSlide" alt="gallery slide" />
+            <div class="placeholderCaption">
+              <div class="phTitle">AI 小画廊</div>
+              <div class="phDesc">先看看 AI 生成的儿童绘画作品</div>
+            </div>
+          </div>
+
+          <!-- 真正的视频层：生成完成后显示 -->
+          <video id="aiVideo" controls></video>
+
+          <!-- 结果图像显示 -->
+          <img id="roi" alt="result" class="hidden" />
+
+          <!-- 生成中遮罩 -->
+          <div id="videoOverlay" class="hidden">
+            <div class="spinner"></div>
+            <div id="overlayText">AI 视频正在生成中...</div>
+          </div>
+        </div>
+
+        <div class="stepNav" id="stepNav">
+          <button id="btnGenerate" class="cuteBtn btn-generate" disabled>
+            <span class="btnEmoji"></span>
+            <span class="btnText">开始生成</span>
+          </button>
+
+          <button id="btnPrevStep" class="cuteBtn btn-prev hidden" disabled>
+            <span class="btnEmoji"></span>
+            <span class="btnText">上一步</span>
+          </button>
+
+          <button id="btnNextStep" class="cuteBtn btn-next   hidden" disabled>
+            <span class="btnEmoji"></span>
+            <span class="btnText">下一步</span>
+          </button>
+
+          <span id="stepIndicator" class="hidden">步骤 0/0</span>
+
+<<<<<<< HEAD
+          <button id="btnRegenerate" class="cuteBtn btn-regenerate hidden">
+            <span class="btnEmoji"></span>
+            <span class="btnText">重新生成</span>
+          </button>
+</div>
+=======
+          <button id="btnRegenerate" class="hidden">重新生成</button>
+        </div>
+
+        <!-- 分享功能 -->
+        <div id="sharePanel" class="hidden">
+          <div class="shareTitle">分享作品</div>
+          <div class="shareButtons">
+            <button id="btnSaveImage">保存图片</button>
+            <button id="btnShareWechat">分享至微信</button>
+            <button id="btnShareQQ">分享至QQ</button>
+          </div>
+        </div>
+>>>>>>> c6ce1194fd98be2cbfd330c32f10186e4d81afa1
+
+      </section>
+    </div>
+
+    <!-- 底部：字幕 + 提示词 -->
+    <div id="bottomBar">
+      <div id="subtitleBar">准备好啦！点“采集一张”开始吧～</div>
+
+      <input id="promptInput" placeholder="（可选）我想学画：小猫" />
+    </div>
+
+    <!-- 全局弹窗 -->
+    <div id="modal" class="hidden">
+      <div id="modalBox">
+        <div id="modalTitle">提示</div>
+        <div id="modalMsg"></div>
+        <button id="modalOk">确定</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+

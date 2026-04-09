@@ -1,0 +1,11 @@
+{
+  "taskId": "t_da55166e85b0",
+  "status": "error",
+  "progress": 1.0,
+  "stage": "error",
+  "error": "HTTPSConnectionPool(host='operator.las.cn-beijing.volces.com', port=443): Max retries exceeded with url: /api/v1/images/generations (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:2427)')))",
+  "recognized_subject": null,
+  "steps": null,
+  "video_asset": null,
+  "updatedAt": 1774270812.9392717
+}

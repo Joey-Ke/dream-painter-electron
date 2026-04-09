@@ -1,0 +1,6 @@
+{
+  "model": "Kwai-Kolors/Kolors",
+  "image_size": "768x768",
+  "subject": "猫",
+  "reference_image_path": "C:\\Users\\l\\Desktop\\ai-drawing-tutor\\backend\\data\\tasks\\t_53732ee5abf3\\input\\input_to_qwen.png"
+}

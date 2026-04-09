@@ -1,0 +1,69 @@
+﻿<head></head>
+<body>
+  <div id="app">
+    <div id="topbar">
+      <span id="backendStatus">AI 后端：未检测</span>
+      <span id="cameraStatus">摄像头：未开启</span>
+    </div>
+
+    <div id="mainGrid">
+      <section class="panel" id="cameraPanel">
+        <div class="panelTitle">绘画画面（摄像头预览）</div>
+
+        <div class="cameraWrap">
+          <video id="cameraVideo" autoplay playsinline></video>
+          <img id="capturePreview" alt="capture" />
+          <div id="countdownOverlay" class="hidden">
+            <div id="countdownNum">3</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <select id="cameraSelect"></select>
+          <button id="btnStartCamera">开启摄像头</button>
+          <button id="btnCapture" disabled>采集一张</button>
+        </div>
+      </section>
+
+      <section class="panel" id="videoPanel">
+        <div class="panelTitle">AI 教学视频</div>
+
+        <div class="videoWrap">
+          <div id="videoPlaceholder" class="placeholder">
+            <div class="phTitle">还没有生成视频</div>
+            <div class="phDesc">先采集一张绘画图片，再点击“开始生成”。</div>
+          </div>
+
+          <video id="aiVideo" controls></video>
+
+          <div id="videoOverlay" class="hidden">
+            <div class="spinner"></div>
+            <div id="overlayText">AI 视频正在生成中...</div>
+          </div>
+        </div>
+
+        <div class="stepNav" id="stepNav">
+          <button id="btnGenerate" disabled>开始生成</button>
+          <button id="btnPrevStep" class="hidden" disabled>上一步</button>
+          <button id="btnNextStep" class="hidden" disabled>下一步</button>
+          <span id="stepIndicator" class="hidden">步骤 0/0</span>
+          <button id="btnRegenerate" class="hidden">重新生成</button>
+        </div>
+      </section>
+    </div>
+
+    <div id="bottomBar">
+      <div id="subtitleBar">准备好啦，点击“采集一张”开始吧。</div>
+      <input id="promptInput" placeholder="可选：我想学画一只小猫" />
+    </div>
+
+    <div id="modal" class="hidden">
+      <div id="modalBox">
+        <div id="modalTitle">提示</div>
+        <div id="modalMsg"></div>
+        <button id="modalOk">确定</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

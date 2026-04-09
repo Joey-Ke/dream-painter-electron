@@ -1,0 +1,11 @@
+{
+  "taskId": "t_cc97a7fd65f8",
+  "status": "error",
+  "progress": 1.0,
+  "stage": "error",
+  "error": "('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))",
+  "recognized_subject": null,
+  "steps": null,
+  "video_asset": null,
+  "updatedAt": 1774352643.7419982
+}

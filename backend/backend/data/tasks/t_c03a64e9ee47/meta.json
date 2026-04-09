@@ -1,0 +1,11 @@
+{
+  "taskId": "t_c03a64e9ee47",
+  "status": "error",
+  "progress": 1.0,
+  "stage": "error",
+  "error": "frame_000.png not found for OpenCV fallback",
+  "recognized_subject": null,
+  "steps": null,
+  "video_asset": null,
+  "updatedAt": 1774247639.9288466
+}

@@ -1,0 +1,23 @@
+{
+  "model": "qwen-vl-max-latest",
+  "raw": {
+    "label": "鸭子",
+    "alternatives": [
+      "鸭",
+      "白鸭"
+    ],
+    "unsure": false,
+    "reason": "图像中的主要主体是一只白色的鸭子，具有明显的橙色喙和脚蹼，是儿童简笔画中常见的动物形象。"
+  },
+  "normalized": {
+    "label": "鸭子",
+    "alternatives": [
+      "鸭子",
+      "鸭",
+      "白鸭"
+    ],
+    "unsure": false,
+    "reason": "图像中的主要主体是一只白色的鸭子，具有明显的橙色喙和脚蹼，是儿童简笔画中常见的动物形象。"
+  },
+  "attempts": []
+}

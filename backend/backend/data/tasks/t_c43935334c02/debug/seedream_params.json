@@ -1,0 +1,6 @@
+{
+  "model": "Kwai-Kolors/Kolors",
+  "image_size": "768x768",
+  "subject": "鸭子",
+  "reference_image_path": "C:\\Users\\l\\Desktop\\ai-drawing-tutor\\backend\\data\\tasks\\t_c43935334c02\\input\\input_to_qwen.png"
+}

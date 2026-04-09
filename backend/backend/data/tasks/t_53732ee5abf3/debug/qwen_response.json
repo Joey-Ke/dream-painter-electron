@@ -1,0 +1,23 @@
+{
+  "model": "qwen-vl-max-latest",
+  "raw": {
+    "label": "猫",
+    "alternatives": [
+      "小猫",
+      "猫咪"
+    ],
+    "unsure": false,
+    "reason": "图像中的主要主体是一只可爱的卡通猫，具有明显的猫的特征，如尖耳朵、胡须和尾巴。红色蝴蝶结是装饰，不影响主体识别。"
+  },
+  "normalized": {
+    "label": "猫",
+    "alternatives": [
+      "猫",
+      "小猫",
+      "猫咪"
+    ],
+    "unsure": false,
+    "reason": "图像中的主要主体是一只可爱的卡通猫，具有明显的猫的特征，如尖耳朵、胡须和尾巴。红色蝴蝶结是装饰，不影响主体识别。"
+  },
+  "attempts": []
+}

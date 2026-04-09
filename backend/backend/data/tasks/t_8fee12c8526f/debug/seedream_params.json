@@ -1,0 +1,13 @@
+{
+  "backend_used": "siliconflow_fallback",
+  "model": "Kwai-Kolors/Kolors",
+  "request_size": "2048x2048",
+  "response_format": "url",
+  "output_format": "png",
+  "watermark": false,
+  "sequential_image_generation": "disabled",
+  "seedream5_url": "https://operator.las.cn-beijing.volces.com/api/v1/images/generations",
+  "siliconflow_url": "https://api.siliconflow.cn/v1/images/generations",
+  "subject": "鸭子",
+  "reference_image_path": "C:\\Users\\l\\Desktop\\ai-drawing-tutor\\backend\\data\\tasks\\t_8fee12c8526f\\input\\input_to_qwen.png"
+}

@@ -1,0 +1,12 @@
+// See the Electron documentation for details on how to use preload scripts:
+// https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
+const { contextBridge, ipcRenderer } = require("electron");
+
+contextBridge.exposeInMainWorld("backend", {
+  getConfig: () => ipcRenderer.invoke("backend:getConfig"),
+});
+
+contextBridge.exposeInMainWorld("electronAPI", {
+  showSaveDialog: (options) => ipcRenderer.invoke("electron:showSaveDialog", options),
+  writeFile: (filePath, data) => ipcRenderer.invoke("electron:writeFile", filePath, data),
+});

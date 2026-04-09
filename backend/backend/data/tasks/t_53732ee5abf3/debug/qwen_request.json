@@ -1,0 +1,11 @@
+{
+  "system_prompt": "You are a children's drawing subject recognizer. Look at the uploaded image and identify the single main subject that should be taught. Ignore background, decoration, and text. Return only valid JSON with keys label, alternatives, unsure, reason. Prefer short Chinese labels such as 猫, 狗, 杯子, 汽车, 苹果, 房子, 树.",
+  "user_text": "Identify the single drawing subject in this image.\nUser prompt: 将它简化成一个儿童可以学会的简笔画\nReturn JSON only.",
+  "models": [
+    "qwen-vl-max-latest",
+    "qwen-vl-max",
+    "qwen-vl-plus-latest",
+    "qwen-vl-plus"
+  ],
+  "image_path": "C:\\Users\\l\\Desktop\\ai-drawing-tutor\\backend\\data\\tasks\\t_53732ee5abf3\\input\\input_to_qwen.png"
+}
