@@ -434,10 +434,46 @@ els.btnPrevStep.onclick = () => gotoStep(currentStep - 1);
 els.btnNextStep.onclick = () => gotoStep(currentStep + 1);
 
 
+async function updateBackendStatus() {
+  if (!window.backend?.getConfig) {
+    els.backendStatus.textContent = '后端：未注入配置';
+    return;
+  }
+
+  els.backendStatus.textContent = '后端：初始化中...';
+
+  try {
+    const cfg = await window.backend.getConfig();
+    const baseUrl = cfg.baseUrl || '';
+    const token = cfg.token || '';
+
+    if (!baseUrl) {
+      els.backendStatus.textContent = '后端：配置地址缺失';
+      return;
+    }
+
+    const res = await fetch(`${baseUrl}/health`, {
+      headers: token ? { 'X-Token': token } : {},
+    });
+
+    if (res.ok) {
+      els.backendStatus.textContent = `后端：已连接 (${baseUrl})`;
+      return;
+    }
+
+    const text = await res.text().catch(() => '');
+    els.backendStatus.textContent = `后端：未连接 - HTTP ${res.status}${text ? ` ${text}` : ''}`;
+  } catch (error) {
+    els.backendStatus.textContent = `后端：未连接 - ${error?.message || error}`;
+  }
+}
+
+
 els.cameraShell.src = cameraShellImg;
 els.cameraViewport.classList.add('hidden');
 setVideoState('idle');
-els.backendStatus.textContent = '后端：未连接（先把前端跑通）';
+els.backendStatus.textContent = '后端：初始化中...';
+updateBackendStatus();
 listCameras().catch(() => {});
 showStepControls(false);
 

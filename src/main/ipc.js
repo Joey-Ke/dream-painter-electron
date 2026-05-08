@@ -1,5 +1,5 @@
 // src/main/ipc.js
-const { app, ipcMain, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const crypto = require("crypto");
 const fs = require("fs");
 const { startBackend, stopBackend } = require("./backendLauncher");
@@ -11,7 +11,7 @@ function genToken() {
 }
 
 async function initBackend() {
-  const token = genToken();
+  const token = process.env.BACKEND_TOKEN || genToken();
   const devPort = process.env.BACKEND_PORT; // 开发期：你可在命令行先 set BACKEND_PORT=8080
   backend = await startBackend({ devPort, token });
 }

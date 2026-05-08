@@ -90,3 +90,9 @@ typings/
 
 # Electron-Forge
 out/
+
+# Python
+backend/venv/
+venv/
+__pycache__/
+*.pyc

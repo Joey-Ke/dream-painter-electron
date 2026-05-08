@@ -37,6 +37,10 @@ function parsePort(v) {
 async function startBackend({ devPort, token }) {
   const isProd = app.isPackaged; // 关键：用“是否打包”区分环境
 
+  // 如果外部环境已指定后端 token，则优先使用它
+  const envToken = process.env.BACKEND_TOKEN;
+  token = token || envToken;
+
   // 允许用环境变量直接指定完整 URL（最灵活）
   const envUrl = process.env.BACKEND_URL;
 
@@ -77,6 +81,7 @@ async function startBackend({ devPort, token }) {
   const child = spawn(backendExe, [], {
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
+    env: { ...process.env, BACKEND_TOKEN: token },
   });
 
   let realPort = null;
