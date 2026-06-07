@@ -1,54 +1,99 @@
-// src/services/api.js
 let baseUrl = "";
 let token = "";
 
-function setBackendConfig(cfg) {
-  baseUrl = cfg.baseUrl;
-  token = cfg.token;
+function setBackendConfig(cfg = {}) {
+  baseUrl = (cfg.baseUrl || "").replace(/\/$/, "");
+  token = cfg.token || "";
 }
 
-async function http(path, options = {}) {
-  const headers = {
-    ...(options.headers || {}),
+function authHeaders(extra = {}) {
+  return {
+    ...extra,
     ...(token ? { "X-Token": token } : {}),
-    "Content-Type": "application/json",
   };
+}
 
-  const res = await fetch(`${baseUrl}${path}`, { ...options, headers });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status} ${path} ${text}`);
+async function readError(res, path) {
+  const text = await res.text().catch(() => "");
+  if (!text) return `HTTP ${res.status} ${path}`;
+
+  try {
+    const payload = JSON.parse(text);
+    const detail = payload.detail || payload.error || text;
+    return typeof detail === "string"
+      ? `HTTP ${res.status} ${path}: ${detail}`
+      : `HTTP ${res.status} ${path}: ${JSON.stringify(detail)}`;
+  } catch (_) {
+    return `HTTP ${res.status} ${path}: ${text}`;
   }
-  return res.json().catch(() => ({}));
 }
 
-function health() {
-  return fetch(`${baseUrl}/health`, { headers: token ? { "X-Token": token } : {} })
-    .then((r) => r.ok);
-}
-
-function captureAndRecognize(projectId) {
-  return http("/capture-and-recognize", {
-    method: "POST",
-    body: JSON.stringify({ projectId }),
+async function health() {
+  if (!baseUrl) return false;
+  const res = await fetch(`${baseUrl}/health`, {
+    headers: authHeaders(),
+    cache: "no-store",
   });
+  return res.ok;
 }
 
-function confirmTarget(jobId, targetLabel) {
-  return http("/confirm-target", {
+async function createTask({ imageBlob, prompt = "" }) {
+  if (!baseUrl) throw new Error("Backend baseUrl is empty.");
+  if (!imageBlob) throw new Error("imageBlob is required.");
+
+  const form = new FormData();
+  form.append("image", imageBlob, "capture.jpg");
+  form.append("prompt", prompt || "");
+
+  const path = "/tasks";
+  const res = await fetch(`${baseUrl}${path}`, {
     method: "POST",
-    body: JSON.stringify({ jobId, targetLabel }),
+    headers: authHeaders(),
+    body: form,
   });
+
+  if (!res.ok) throw new Error(await readError(res, path));
+  return res.json();
 }
 
-function getJob(jobId) {
-  return http(`/jobs/${jobId}`, { method: "GET" });
+async function getTask(taskId) {
+  if (!baseUrl) throw new Error("Backend baseUrl is empty.");
+  if (!taskId) throw new Error("taskId is required.");
+
+  const path = `/tasks/${encodeURIComponent(taskId)}`;
+  const res = await fetch(`${baseUrl}${path}`, {
+    headers: authHeaders(),
+    cache: "no-store",
+  });
+
+  if (!res.ok) throw new Error(await readError(res, path));
+  return res.json();
 }
 
-// 静态文件：注意缓存（文档强调要加时间戳或 no-cache）:contentReference[oaicite:18]{index=18}
-function fileUrl(p) {
-  const t = Date.now();
-  return `${baseUrl}${p}?t=${t}`;
+function appendTimestamp(url) {
+  const joiner = url.includes("?") ? "&" : "?";
+  return `${url}${joiner}t=${Date.now()}`;
 }
 
-module.exports = { setBackendConfig, health, captureAndRecognize, confirmTarget, getJob, fileUrl };
+function assetUrl(path) {
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return appendTimestamp(path);
+
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return appendTimestamp(`${baseUrl}${normalizedPath}`);
+}
+
+function frameUrl(taskId, k) {
+  const safeTaskId = encodeURIComponent(taskId);
+  const safeIndex = Math.max(0, Number(k) || 0);
+  return appendTimestamp(`${baseUrl}/tasks/${safeTaskId}/steps/${safeIndex}/frame`);
+}
+
+module.exports = {
+  setBackendConfig,
+  health,
+  createTask,
+  getTask,
+  assetUrl,
+  frameUrl,
+};

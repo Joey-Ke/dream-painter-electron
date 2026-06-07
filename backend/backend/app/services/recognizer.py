@@ -335,7 +335,8 @@ class RealQwenRecognizer(VisionRecognizer):
         api_key = os.getenv("DASHSCOPE_API_KEY") or os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise RuntimeError(
-                "Missing API key. Set DASHSCOPE_API_KEY or OPENAI_API_KEY in backend/.env."
+                "缺少图像识别 API Key。请在 backend/.env 中配置 DASHSCOPE_API_KEY 或 OPENAI_API_KEY；"
+                "如果只需要本地演示，请使用 RECOGNIZER_BACKEND=auto/local，并设置 LINEART_BACKEND=mock。"
             )
 
         self.client = OpenAI(
