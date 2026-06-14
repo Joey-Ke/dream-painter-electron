@@ -1,7 +1,7 @@
 # FILE: backend/app/schemas.py
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -40,6 +40,7 @@ class TaskStatusResponse(BaseModel):
     video_asset: VideoAsset | None = None
     steps: StepsPayload | None = None
     recognized_subject: RecognizedSubject | None = None
+    step_count_estimate: dict[str, Any] | None = None
 
 
 class HealthResponse(BaseModel):

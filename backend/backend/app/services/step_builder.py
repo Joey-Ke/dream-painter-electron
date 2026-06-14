@@ -11,6 +11,79 @@ from app.config import settings
 
 
 class StepBuilder:
+    def _build_stroke_reveal_steps(
+        self,
+        black_mask: np.ndarray,
+        output_dir: Path,
+        step_plan: dict[str, Any],
+        step_count: int,
+        fps: int,
+    ) -> dict[str, Any]:
+        source = (black_mask.astype(np.uint8) * 255)
+        contours, _ = cv2.findContours(source, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+        height, width = black_mask.shape
+
+        usable: list[tuple[float, float, float, np.ndarray]] = []
+        for contour in contours:
+            if len(contour) < 8:
+                continue
+            arc = float(cv2.arcLength(contour, closed=False))
+            if arc < 18:
+                continue
+            area = float(abs(cv2.contourArea(contour)))
+            x, y, w, h = cv2.boundingRect(contour)
+            # Prefer long teachable contours before short interior marks.
+            priority = area + arc * 2.0 - y * 0.03 - x * 0.01
+            usable.append((priority, area, arc, contour))
+
+        if not usable:
+            return self._build_fallback_steps(black_mask, output_dir, step_count, fps)
+
+        usable.sort(key=lambda item: item[0], reverse=True)
+        usable = usable[:120]
+        total_arc = sum(item[2] for item in usable) or 1.0
+
+        raw_steps = list(step_plan.get("steps") or [])
+        prompts = [
+            str(step.get("instruction") or f"第 {index + 1} 步：沿着线条慢慢画。")
+            for index, step in enumerate(raw_steps[:step_count])
+            if isinstance(step, dict)
+        ]
+        while len(prompts) < step_count:
+            prompts.append(f"第 {len(prompts) + 1} 步：沿着线条慢慢补上这一笔。")
+
+        timestamps: list[float] = []
+        for index in range(step_count):
+            target = total_arc * ((index + 1) / step_count)
+            used = 0.0
+            canvas = np.full((height, width), 255, dtype=np.uint8)
+
+            for _, _, arc, contour in usable:
+                points = contour.reshape(-1, 2)
+                if used + arc <= target:
+                    cv2.polylines(canvas, [points], isClosed=False, color=0, thickness=2, lineType=cv2.LINE_AA)
+                    used += arc
+                    continue
+
+                remaining = target - used
+                if remaining <= 0:
+                    break
+
+                take_ratio = max(0.0, min(1.0, remaining / max(arc, 1.0)))
+                take = max(2, min(len(points), int(len(points) * take_ratio)))
+                cv2.polylines(canvas, [points[:take]], isClosed=False, color=0, thickness=2, lineType=cv2.LINE_AA)
+                break
+
+            rgb = cv2.cvtColor(canvas, cv2.COLOR_GRAY2BGR)
+            cv2.imwrite(str(output_dir / f"frame_{index:03d}.png"), rgb)
+            timestamps.append(round(index / fps, 4))
+
+        return {
+            "stepCount": step_count,
+            "timestamps": timestamps,
+            "prompts": prompts[:step_count],
+        }
+
     def _duck_core_parts_present(
         self,
         part_masks: dict[str, np.ndarray],
@@ -745,6 +818,9 @@ class StepBuilder:
         step_plan: dict[str, Any] | None = None,
         subject_label: str = "",
     ) -> dict[str, Any]:
+        if step_count is None and step_plan:
+            planned_steps = step_plan.get("steps") or []
+            step_count = len(planned_steps) or None
         step_count = step_count or settings.step_count
         fps = fps or settings.fps
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -760,12 +836,12 @@ class StepBuilder:
             raise RuntimeError("No drawable black pixels found in lineart image")
 
         if step_plan:
-            return self._build_plan_driven_steps(
+            return self._build_stroke_reveal_steps(
                 black_mask=black_mask,
                 output_dir=output_dir,
                 step_plan=step_plan,
+                step_count=step_count,
                 fps=fps,
-                subject_label=subject_label,
             )
 
         return self._build_fallback_steps(

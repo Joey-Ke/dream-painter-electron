@@ -98,13 +98,13 @@ def _subject_alias(subject: str) -> str:
 def _default_parts(subject: str) -> list[str]:
     alias = _subject_alias(subject)
     parts_map = {
-        "duck": ["head", "beak", "eye", "neck", "back", "belly", "wing", "tail", "legs", "feet"],
-        "cat": ["head", "ears", "face", "body", "front legs", "back legs", "tail"],
-        "dog": ["head", "ears", "face", "body", "front legs", "back legs", "tail"],
-        "car": ["car body", "roof", "windows", "front wheel", "rear wheel", "details"],
-        "house": ["roof", "walls", "door", "window", "ground line"],
-        "tree": ["trunk", "main canopy", "left branches", "right branches", "ground line"],
-        "generic": ["main outline", "secondary outline", "facial or key details", "final details"],
+        "duck": ["身体柔和大弧线", "头部圆润轮廓", "脖子过渡曲线", "扁鸭嘴曲线", "眼睛", "背部外轮廓", "腹部外轮廓", "翅膀弧线", "尾巴", "腿", "脚蹼"],
+        "cat": ["头部圆润轮廓", "两只耳朵", "脸部五官", "身体柔和椭圆", "前腿", "后腿", "尾巴"],
+        "dog": ["头部圆润轮廓", "耳朵", "脸部五官", "身体柔和椭圆", "前腿", "后腿", "尾巴"],
+        "car": ["车身长方形", "车顶", "车窗", "前轮", "后轮", "车灯细节"],
+        "house": ["屋顶", "墙面", "门", "窗户", "地面线"],
+        "tree": ["树干", "大树冠", "左侧枝叶", "右侧枝叶", "地面线"],
+        "generic": ["最大外轮廓", "第二大轮廓", "关键特征", "最后细节"],
     }
     return parts_map[alias]
 
@@ -133,21 +133,23 @@ def _default_step_plan(subject: str, step_count: int) -> dict[str, Any]:
         visible_parts = _unique_non_empty(visible_parts + new_parts)
         hidden_parts = [part for part in parts if part not in visible_parts]
         if idx == 0:
-            instruction = f"Start with the biggest simple shape for the {subject}."
+            instruction = f"先画出{subject}最大的外轮廓，位置要放在画纸中间。"
         elif idx == total_steps - 1:
-            instruction = f"Finish the {subject} by adding the last missing parts and small details."
+            instruction = f"最后补上{subject}剩下的小细节，检查每条线都连在主体上。"
         else:
-            instruction = f"Keep the existing lines and add {' and '.join(new_parts) or 'the next part'}."
+            instruction = f"保留前面的线，再加上{'和'.join(new_parts) or '下一部分'}。"
 
         steps.append(
             {
-                "title": f"Step {idx + 1}",
+                "title": f"第 {idx + 1} 步",
                 "instruction": instruction,
                 "focus_parts": list(new_parts or visible_parts[-1:]),
                 "new_parts": list(new_parts or visible_parts[-1:]),
                 "keep_parts": keep_parts,
                 "visible_parts": list(visible_parts),
                 "hidden_parts": hidden_parts,
+                "stroke_hint": "用一笔或两笔慢慢画，保持线条简单。",
+                "mask_hint": "显示当前新增部件和之前已经画过的部件。",
             }
         )
 
@@ -191,6 +193,7 @@ def _normalize_step_plan(payload: dict[str, Any], subject: str, step_count: int)
         title = str(raw_step.get("title") or f"Step {index + 1}").strip()
         instruction = str(
             raw_step.get("instruction")
+            or raw_step.get("child_instruction")
             or raw_step.get("prompt")
             or raw_step.get("desc")
             or raw_step.get("text")
@@ -213,6 +216,8 @@ def _normalize_step_plan(payload: dict[str, Any], subject: str, step_count: int)
                 "keep_parts": keep_parts,
                 "visible_parts": list(visible_parts),
                 "hidden_parts": hidden_parts,
+                "stroke_hint": str(raw_step.get("stroke_hint") or "").strip(),
+                "mask_hint": str(raw_step.get("mask_hint") or "").strip(),
             }
         )
 
@@ -252,6 +257,8 @@ def _normalize_step_plan(payload: dict[str, Any], subject: str, step_count: int)
                     "keep_parts": previous_visible,
                     "visible_parts": visible,
                     "hidden_parts": [part for part in parts if part not in visible],
+                    "stroke_hint": source.get("stroke_hint", ""),
+                    "mask_hint": source.get("mask_hint", ""),
                 }
             )
 
@@ -305,28 +312,41 @@ def generate_steps_ai(
     fallback = _default_step_plan(subject, step_count)
 
     system_prompt = (
-        "You are a children's drawing teacher. "
-        "Plan a cumulative drawing tutorial. "
-        "Each step must keep all previous lines and add only one or two new parts. "
-        "Early steps must look unfinished. The last step completes the whole subject. "
-        "Return only valid JSON with keys subject, overall_shape, parts, steps. "
-        "Each step must contain title, instruction, focus_parts, new_parts, keep_parts, hidden_parts."
+        "你是一名儿童美术老师，也是一名线稿拆解规划师。"
+        "你的任务不是生成漂亮成图提示词，而是把参考图拆成真实人类画画时会采用的累计笔画步骤。"
+        "必须先观察参考图的主体、朝向、比例、姿态和最大轮廓，再规划步骤。"
+        "每一步必须保留之前画过的所有线，只新增 1-2 个可讲清楚的部件或笔画。"
+        "顺序要像人类教画：先大形和外轮廓，再连接结构，再关键特征，最后小细节。"
+        "步骤说明要强调柔和弧线、顺手的起笔和收笔，不要把对象拆成生硬几何图案拼接。"
+        "禁止换主体、换物种、换姿态、添加背景、添加装饰物。"
+        "只返回合法 JSON，不要 Markdown，不要解释。"
+        "JSON 顶层键必须是 subject, overall_shape, parts, steps。"
+        "每个 step 必须包含 title, instruction, focus_parts, new_parts, keep_parts, visible_parts, hidden_parts, stroke_hint, mask_hint。"
     )
 
     user_text = (
-        f"Create a {step_count}-step drawing tutorial for {subject}.\n"
-        f"Extra user prompt: {prompt or '(empty)'}\n"
-        "Make the steps suitable for children, simple, and based on visible body parts.\n"
-        "If a reference image is provided, analyze the full pose first, then split it into drawable parts.\n"
-        "Do not output a polished art prompt. Output a teaching plan."
+        f"请为“{subject}”设计 {step_count} 个累计绘画步骤。\n"
+        f"用户补充：{prompt or '无'}\n"
+        "输出目标：让 4-10 岁儿童可以照着一步一步画，最终图必须仍然是参考图里的同一个主体。\n"
+        "规划要求：\n"
+        "1. overall_shape 用一句中文描述参考图主体的朝向、比例、姿态和最大轮廓。\n"
+        "2. parts 按最终画面需要出现的可见部件列出，使用中文短词。\n"
+        "3. steps 是累计步骤：第 n 步 visible_parts 必须包含第 1 到 n 步所有已经画出的部件。\n"
+        "4. instruction 必须是儿童能听懂的一句中文短句，要描述从哪里起笔、画什么形状、连到哪里。\n"
+        "5. stroke_hint 描述这一小步的人类笔画方式，例如“一笔画大弧线”“两笔连成扁嘴”。\n"
+        "6. mask_hint 描述如果要从最终线稿中抠出这一步，应该显示哪些区域。\n"
+        "7. 早期步骤不能看起来像完成图；最后一步必须完整。\n"
+        "8. 不要输出“继续画”“添加细节”这种空话。\n"
+        "9. 不要只用圆形、三角形、长方形拼接主体；可以用儿童能画的简单形，但必须带自然弧线和柔和过渡。"
     )
 
     if _subject_alias(subject) == "duck":
         user_text += (
-            "\nFor a duck, prefer a cute side-view worksheet duck."
-            "\nUse clear parts such as head, beak, eye, neck, back, belly, wing, tail, legs, feet."
-            "\nAvoid reducing the duck to only circles and straight lines."
-            "\nKeep it simple enough for children, but make the silhouette clearly read as a duck."
+            "\n鸭子专项要求："
+            "\n- 不要把鸭子变成圆脸、鸡、鹅、天鹅、表情包或玩具。"
+            "\n- 优先保持侧视小鸭：身体用柔和大弧线，不要只是硬椭圆；头部圆润但要和脖子自然连接；鸭嘴用上下两条轻弯曲线；小眼睛、背部弧线、腹部弧线、翅膀、短尾巴、两条腿、脚蹼。"
+            "\n- 推荐顺序：身体柔和大形 -> 头和脖子过渡 -> 鸭嘴和眼睛 -> 背腹外轮廓连接 -> 翅膀弧线 -> 尾巴 -> 腿和脚蹼 -> 最后检查。"
+            "\n- 脚不能画成小圆圈，应该是简单脚蹼或扁平脚。"
         )
 
     if reference_image_path is None:

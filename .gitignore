@@ -44,6 +44,7 @@ typings/
 
 # Optional npm cache directory
 .npm
+.tmp/
 
 # Optional eslint cache
 .eslintcache
@@ -93,6 +94,9 @@ out/
 
 # Python
 backend/venv/
+backend/backend/.venv/
+backend/backend/.venv311/
+backend/backend/data/tasks/
 venv/
 __pycache__/
 *.pyc

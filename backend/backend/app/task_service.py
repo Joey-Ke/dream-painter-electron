@@ -17,7 +17,7 @@ from app.services.step_builder import StepBuilder
 from app.services.storage import StorageService
 from app.services.video_composer import VideoComposer
 from app.services.video_enhancer import build_video_enhancer
-from app.utils.image_io import resize_for_recognition, save_upload_image
+from app.utils.image_io import estimate_drawing_step_count, resize_for_recognition, save_upload_image
 from app.utils.logger import create_task_logger
 
 
@@ -43,6 +43,7 @@ class TaskService:
         recognized_subject: dict[str, Any] | None = None,
         steps: dict[str, Any] | None = None,
         video_asset: dict[str, Any] | None = None,
+        step_count_estimate: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return {
             "taskId": task_id,
@@ -53,6 +54,7 @@ class TaskService:
             "recognized_subject": recognized_subject,
             "steps": steps,
             "video_asset": video_asset,
+            "step_count_estimate": step_count_estimate,
             "updatedAt": time.time(),
         }
 
@@ -66,6 +68,28 @@ class TaskService:
         current.update(kwargs)
         self._save_meta(task_id, current)
         return current
+
+    def _friendly_error(self, exc: Exception) -> str:
+        message = str(exc)
+        lowered = message.lower()
+        if (
+            "siliconflow" in lowered
+            or "siliconflow_api_key" in lowered
+            or "seedream" in lowered
+            or "seedream5_api_key" in lowered
+        ):
+            return (
+                "线稿生成 API Key 缺失或不可用。当前建议使用 LINEART_BACKEND=siliconflow，"
+                "并在 backend/.env 中配置 SILICONFLOW_API_KEY。原始错误："
+                f"{message}"
+            )
+        if "dashscope_api_key" in lowered or "openai_api_key" in lowered or "recognizer" in lowered:
+            return (
+                "图像识别 API Key 缺失或不可用。可以配置 DASHSCOPE_API_KEY，"
+                "或使用 RECOGNIZER_BACKEND=auto/local。原始错误："
+                f"{message}"
+            )
+        return message
 
     def create_task(self, image_file, prompt: str) -> str:
         task_id, task_dir = self.storage.create_task_dir()
@@ -125,6 +149,25 @@ class TaskService:
 
             new_size = resize_for_recognition(input_raw, input_to_qwen, settings.max_qwen_side)
             logger.info("Prepared input_to_qwen=%s, size=%s", input_to_qwen, new_size)
+            if settings.auto_step_count:
+                step_count_estimate = estimate_drawing_step_count(
+                    input_to_qwen,
+                    default_steps=settings.step_count,
+                    min_steps=settings.min_step_count,
+                    max_steps=settings.max_step_count,
+                )
+            else:
+                step_count_estimate = {
+                    "step_count": settings.step_count,
+                    "bucket": "fixed",
+                    "reason": "AUTO_STEP_COUNT is disabled",
+                    "default_steps": settings.step_count,
+                    "min_steps": settings.min_step_count,
+                    "max_steps": settings.max_step_count,
+                }
+            task_step_count = int(step_count_estimate["step_count"])
+            self.storage.write_json(debug_dir / "step_count_estimate.json", step_count_estimate)
+            logger.info("Estimated drawing steps=%d, details=%s", task_step_count, step_count_estimate)
 
             self._update_meta(task_id, progress=0.20, stage="recognize_subject")
             logger.info("Stage recognize_subject started")
@@ -142,9 +185,10 @@ class TaskService:
                 progress=0.45,
                 stage="generate_lineart",
                 recognized_subject=subject.model_dump(),
+                step_count_estimate=step_count_estimate,
             )
             logger.info("Stage generate_lineart started")
-            print("🔥 已进入 AI 生成模块")
+            logger.info("Entered AI image generation module")
 
             generation_result = self.lineart_generator.generate(
                 subject=subject,
@@ -153,6 +197,7 @@ class TaskService:
                 debug_dir=debug_dir,
                 size=settings.lineart_size,
                 reference_image_path=input_to_qwen,
+                step_count=task_step_count,
             )
 
             logger.info("AI image generation done")
@@ -162,6 +207,7 @@ class TaskService:
                 progress=0.70,
                 stage="build_steps",
                 recognized_subject=subject.model_dump(),
+                step_count_estimate=step_count_estimate,
             )
             logger.info("Stage build_steps started")
 
@@ -180,6 +226,8 @@ class TaskService:
             steps.setdefault("frames", [f.name for f in frames])
             steps.setdefault("count", len(frames))
             steps.setdefault("stepCount", len(frames))
+            steps.setdefault("autoStepCount", settings.auto_step_count)
+            steps.setdefault("complexity", step_count_estimate)
             steps.setdefault("timestamps", [round(i / settings.fps, 4) for i in range(len(frames))])
             steps.setdefault(
                 "prompts",
@@ -195,14 +243,20 @@ class TaskService:
                 stage="compose_video",
                 recognized_subject=subject.model_dump(),
                 steps=steps,
+                step_count_estimate=step_count_estimate,
             )
             logger.info("Stage compose_video started")
             t3 = time.time()
-            self.video_composer.compose(
+            video_timestamps = self.video_composer.compose(
                 task_dir=task_dir,
                 fps=settings.fps,
                 output_path=local_video_path,
             )
+            if video_timestamps:
+                steps["timestamps"] = video_timestamps
+                steps["videoFps"] = settings.fps
+                self.storage.write_json(steps_path, steps)
+
             final_video_path = self.video_enhancer.enhance(
                 input_video=local_video_path,
                 output_video=video_path,
@@ -228,6 +282,7 @@ class TaskService:
                 recognized_subject=subject.model_dump(),
                 steps=steps,
                 video_asset=video_asset,
+                step_count_estimate=step_count_estimate,
             )
             self._save_meta(task_id, final_meta)
             logger.info("Task done in %.3fs", time.time() - started_at)
@@ -238,12 +293,22 @@ class TaskService:
             logger.error("Task failed: %s", exc)
             logger.error(tb)
 
+            try:
+                current = self.get_task(task_id)
+            except KeyError:
+                current = {}
+            failed_stage = current.get("stage") or "error"
+
             error_meta = self._now_meta(
                 task_id=task_id,
                 status="error",
                 progress=1.0,
-                stage="error",
-                error=str(exc),
+                stage=failed_stage,
+                error=self._friendly_error(exc),
+                recognized_subject=current.get("recognized_subject"),
+                steps=current.get("steps"),
+                video_asset=current.get("video_asset"),
+                step_count_estimate=current.get("step_count_estimate"),
             )
             self._save_meta(task_id, error_meta)
 

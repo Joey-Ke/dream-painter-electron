@@ -37,7 +37,10 @@ class Settings:
     max_qwen_side: int = 1280
     lineart_size: int = 768
     step_count: int = 12
-    fps: int = 2
+    auto_step_count: bool = True
+    min_step_count: int = 8
+    max_step_count: int = 24
+    fps: int = 12
     line_threshold: int = 220
     log_level: str = "INFO"
     recognizer_backend: str = "auto"
@@ -68,7 +71,10 @@ class Settings:
             max_qwen_side=int(os.getenv("QWEN_MAX_SIDE", "1280")),
             lineart_size=int(os.getenv("LINEART_SIZE", "768")),
             step_count=int(os.getenv("STEP_COUNT", "12")),
-            fps=int(os.getenv("VIDEO_FPS", "2")),
+            auto_step_count=os.getenv("AUTO_STEP_COUNT", "1").strip().lower() not in {"0", "false", "no", "off"},
+            min_step_count=int(os.getenv("MIN_STEP_COUNT", "8")),
+            max_step_count=int(os.getenv("MAX_STEP_COUNT", "24")),
+            fps=int(os.getenv("VIDEO_FPS", "12")),
             line_threshold=int(os.getenv("LINE_THRESHOLD", "220")),
             log_level=os.getenv("LOG_LEVEL", "INFO"),
             recognizer_backend=os.getenv("RECOGNIZER_BACKEND", "auto"),
