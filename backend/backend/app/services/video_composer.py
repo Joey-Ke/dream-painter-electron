@@ -88,10 +88,22 @@ class VideoComposer:
         task_dir: Path,
         fps: int,
         output_path: Path,
+        step_indices: list[int] | None = None,
     ) -> list[float]:
         source_frames = sorted((task_dir / "output" / "frames").glob("frame_*.png"))
         if not source_frames:
             raise FileNotFoundError("No source step frames found for video composition")
+
+        # 如果指定了步骤索引，则筛选对应的帧
+        if step_indices is not None:
+            selected_frames = []
+            for idx in step_indices:
+                frame_path = task_dir / "output" / "frames" / f"frame_{idx:03d}.png"
+                if frame_path.exists():
+                    selected_frames.append(frame_path)
+            source_frames = selected_frames
+            if not source_frames:
+                raise FileNotFoundError("No selected step frames found for video composition")
 
         render_dir_name = f"render_frames_{int(time.time() * 1000)}"
         render_dir = task_dir / "output" / render_dir_name

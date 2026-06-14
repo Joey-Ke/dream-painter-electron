@@ -97,6 +97,61 @@ backend/venv/
 backend/backend/.venv/
 backend/backend/.venv311/
 backend/backend/data/tasks/
+backend/backend/data/debug_duck_steps/
 venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+
+# Build outputs
+backend/dist/
+backend/backend/dist/
+backend/build/
+backend/backend/build/
+backend/backend.spec
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Test files
+.pytest_cache/
+.tox/
+.coverage
+coverage.xml
+htmlcov/
+
+# Node.js
+node_modules/
+.npm/
+.eslintcache
+
+# Electron
+out/
+.dist/
+
+# Temporary files
+.tmp/
+.cache/
+.temp/
+*.tmp
+*.temp

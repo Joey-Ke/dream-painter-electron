@@ -46,6 +46,18 @@ class Settings:
     recognizer_backend: str = "auto"
     lineart_backend: str = "mock"
     seedance_enabled: bool = False
+    # AI接口配置 - AI A:作画, AI B:步骤规划, AI C:聊天
+    drawing_api_base_url: str = ""
+    drawing_api_key: str = ""
+    planning_api_base_url: str = ""
+    planning_api_key: str = ""
+    chat_api_base_url: str = ""
+    chat_api_key: str = ""
+    chat_model: str = "qwen-flash"
+    # TTS配置
+    tts_api_base_url: str = ""
+    tts_api_key: str = ""
+    tts_voice: str = "zh-CN-XiaoxiaoNeural"
 
     @classmethod
     def load(cls) -> "Settings":
@@ -80,6 +92,18 @@ class Settings:
             recognizer_backend=os.getenv("RECOGNIZER_BACKEND", "auto"),
             lineart_backend=os.getenv("LINEART_BACKEND", "seedream5"),
             seedance_enabled=os.getenv("SEEDANCE_ENABLED", "0") == "1",
+            # AI接口配置
+            drawing_api_base_url=os.getenv("DRAWING_API_BASE_URL", ""),
+            drawing_api_key=os.getenv("DRAWING_API_KEY", ""),
+            planning_api_base_url=os.getenv("PLANNING_API_BASE_URL", ""),
+            planning_api_key=os.getenv("PLANNING_API_KEY", ""),
+            chat_api_base_url=os.getenv("CHAT_API_BASE_URL", ""),
+            chat_api_key=os.getenv("CHAT_API_KEY", ""),
+            chat_model=os.getenv("CHAT_MODEL", "qwen-flash"),
+            # TTS配置
+            tts_api_base_url=os.getenv("TTS_API_BASE_URL", ""),
+            tts_api_key=os.getenv("TTS_API_KEY", ""),
+            tts_voice=os.getenv("TTS_VOICE", "zh-CN-XiaoxiaoNeural"),
         )
 
 
