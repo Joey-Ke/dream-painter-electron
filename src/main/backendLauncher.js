@@ -22,10 +22,71 @@ async function waitHealth(baseUrl, token, timeoutMs = 3000) {
   return false;
 }
 
+function pipeBackendLogs(child, label) {
+  child.stdout.on("data", (buf) => {
+    console.log(`[${label} stdout]`, buf.toString());
+  });
+
+  child.stderr.on("data", (buf) => {
+    console.error(`[${label} stderr]`, buf.toString());
+  });
+}
+
 function parsePort(v) {
   if (!v) return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
+}
+
+async function startDevBackend({ port, token, baseUrl }) {
+  const backendDir = path.join(process.cwd(), "backend", "backend");
+  const pythonCandidates = [
+    path.join(backendDir, ".venv311", "Scripts", "python.exe"),
+    path.join(backendDir, ".venv", "Scripts", "python.exe"),
+    "python",
+  ];
+  const python = pythonCandidates.find((candidate) => {
+    return candidate === "python" || fs.existsSync(candidate);
+  });
+
+  if (!fs.existsSync(backendDir)) {
+    return {
+      child: null,
+      ready: false,
+      error: `Dev backend directory not found: ${backendDir}`,
+    };
+  }
+
+  const child = spawn(
+    python,
+    ["-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", String(port)],
+    {
+      cwd: backendDir,
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+      env: {
+        ...process.env,
+        BACKEND_PORT: String(port),
+        BACKEND_TOKEN: token,
+        PYTHONDONTWRITEBYTECODE: "1",
+        PYTHONIOENCODING: "utf-8",
+      },
+    },
+  );
+
+  pipeBackendLogs(child, "dev backend");
+
+  const ready = await waitHealth(baseUrl, token, 15000);
+  if (!ready) {
+    try { child.kill(); } catch (_) {}
+    return {
+      child: null,
+      ready: false,
+      error: `Dev backend failed to start: ${baseUrl}`,
+    };
+  }
+
+  return { child, ready: true, error: null };
 }
 
 /**
@@ -50,16 +111,26 @@ async function startBackend({ devPort, token }) {
     parsePort(process.env.BACKEND_PORT) ||
     8000;
 
-  // ========== 1) 开发期：永远不 spawn ==========
+  // ========== 1) 开发期：优先复用已有后端，未启动时自动拉起 ==========
   if (!isProd) {
     const baseUrl = envUrl || `http://127.0.0.1:${port}`;
-    const ready = await waitHealth(baseUrl, token, 1500); // 开发期别等太久，避免启动卡住
+    let ready = await waitHealth(baseUrl, token, 1500); // 开发期先探测已有后端
+    let child = null;
+    let error = ready ? null : `Backend not ready: ${baseUrl}`;
+
+    if (!ready && !envUrl) {
+      const started = await startDevBackend({ port, token, baseUrl });
+      ready = started.ready;
+      child = started.child;
+      error = started.error;
+    }
+
     return {
       baseUrl,
       token,
-      child: null,
+      child,
       ready,
-      error: ready ? null : `Backend not ready: ${baseUrl}`,
+      error,
     };
   }
 
@@ -81,13 +152,14 @@ async function startBackend({ devPort, token }) {
   const child = spawn(backendExe, [], {
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
-    env: { ...process.env, BACKEND_TOKEN: token },
+    env: { ...process.env, BACKEND_TOKEN: token, PYTHONIOENCODING: "utf-8" },
   });
 
   let realPort = null;
 
   child.stdout.on("data", (buf) => {
     const text = buf.toString();
+    console.log("[backend stdout]", text);
     const m = text.match(/PORT=(\d+)/);
     if (m) realPort = Number(m[1]);
   });

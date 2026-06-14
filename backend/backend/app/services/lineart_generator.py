@@ -268,9 +268,9 @@ class RealSeedreamGenerator(LineartGenerator):
         )
         configured_url = os.getenv(
             "SEEDREAM5_IMAGE_URL",
-            "https://operator.las.cn-beijing.volces.com/api/v1/images/generations",
+            "https://operator.las.cn-beijing.volces.com/api/v1/online/images/generations",
         )
-        self.url = configured_url.replace("/api/v1/online/images/generations", "/api/v1/images/generations")
+        self.url = configured_url
         self.model = os.getenv("SEEDREAM5_MODEL", "doubao-seedream-5-0-lite-260128")
         self.request_size = os.getenv("SEEDREAM5_REQUEST_SIZE", "2048x2048")
         self.response_format = os.getenv("SEEDREAM5_RESPONSE_FORMAT", "url").strip().lower() or "url"
@@ -314,19 +314,23 @@ class RealSeedreamGenerator(LineartGenerator):
                 "- Use connected teachable outlines. Avoid decorative scenery, water, grass, reeds, hearts, feathers texture, shadows, gradients, or realistic rendering.\n"
             )
         return (
-            "Task: create ONE final black-and-white line-art worksheet image for a child to copy.\n"
+            "Task: create one final children's drawing worksheet line art; "
+            "this single final image will be split into step-by-step drawing frames later.\n"
             f"Subject: {subject.label}\n"
             f"Recognized alternatives: {', '.join(subject.alternatives or [])}\n"
             f"Reference pose/composition to preserve: {overall_shape}\n"
             f"Required visible parts: {parts}\n"
             f"Teaching step plan that this final drawing must support:\n{step_summary or '(no step plan)'}\n"
             "Hard constraints:\n"
+            "- Black outline only.\n"
             "- Stay close to the uploaded reference image silhouette, proportions, pose, and main subject. Do not invent a different animal/object.\n"
+            "- Stay close to the reference silhouette and proportions.\n"
             "- Use only clean black contour lines on a pure white background.\n"
             "- Do not construct the subject from obvious primitive geometry only. Avoid a simple collage of circles, rectangles, triangles, or straight sticks.\n"
             "- Prefer soft flowing curves, connected contour arcs, rounded organic transitions, and child-friendly hand-drawn line quality.\n"
             "- Keep simplified forms, but preserve natural silhouette cues from the reference instead of reducing everything to geometric symbols.\n"
             "- Center a single complete subject; no cropped body parts; no extra props; no text; no labels; no decorative frame.\n"
+            "- Do not add a decorative border, plants, grass, water, puddles, reeds, scenery, or props.\n"
             "- The final line art must be simple enough for a 4-10 year old to trace: large readable shapes, few interior details, no shading, no color, no texture.\n"
             "- Avoid isolated random strokes; all lines should belong to the visible subject parts listed above.\n"
             f"{subject_style}"

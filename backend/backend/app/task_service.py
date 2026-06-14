@@ -188,7 +188,7 @@ class TaskService:
                 step_count_estimate=step_count_estimate,
             )
             logger.info("Stage generate_lineart started")
-            print("🔥 已进入 AI 生成模块")
+            logger.info("Entered AI image generation module")
 
             generation_result = self.lineart_generator.generate(
                 subject=subject,
@@ -247,11 +247,16 @@ class TaskService:
             )
             logger.info("Stage compose_video started")
             t3 = time.time()
-            self.video_composer.compose(
+            video_timestamps = self.video_composer.compose(
                 task_dir=task_dir,
                 fps=settings.fps,
                 output_path=local_video_path,
             )
+            if video_timestamps:
+                steps["timestamps"] = video_timestamps
+                steps["videoFps"] = settings.fps
+                self.storage.write_json(steps_path, steps)
+
             final_video_path = self.video_enhancer.enhance(
                 input_video=local_video_path,
                 output_video=video_path,

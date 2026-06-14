@@ -818,6 +818,9 @@ class StepBuilder:
         step_plan: dict[str, Any] | None = None,
         subject_label: str = "",
     ) -> dict[str, Any]:
+        if step_count is None and step_plan:
+            planned_steps = step_plan.get("steps") or []
+            step_count = len(planned_steps) or None
         step_count = step_count or settings.step_count
         fps = fps or settings.fps
         output_dir.mkdir(parents=True, exist_ok=True)

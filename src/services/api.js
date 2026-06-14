@@ -70,9 +70,22 @@ async function getTask(taskId) {
   return res.json();
 }
 
-function appendTimestamp(url) {
+function appendQuery(url, params = {}) {
+  const query = Object.entries(params)
+    .filter(([, value]) => value != null && value !== "")
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join("&");
+  if (!query) return url;
   const joiner = url.includes("?") ? "&" : "?";
-  return `${url}${joiner}t=${Date.now()}`;
+  return `${url}${joiner}${query}`;
+}
+
+function appendTimestamp(url) {
+  return appendQuery(url, { t: Date.now() });
+}
+
+function appendMediaAuth(url) {
+  return appendQuery(url, token ? { token } : {});
 }
 
 function assetUrl(path) {
@@ -80,13 +93,13 @@ function assetUrl(path) {
   if (/^https?:\/\//i.test(path)) return appendTimestamp(path);
 
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return appendTimestamp(`${baseUrl}${normalizedPath}`);
+  return appendTimestamp(appendMediaAuth(`${baseUrl}${normalizedPath}`));
 }
 
 function frameUrl(taskId, k) {
   const safeTaskId = encodeURIComponent(taskId);
   const safeIndex = Math.max(0, Number(k) || 0);
-  return appendTimestamp(`${baseUrl}/tasks/${safeTaskId}/steps/${safeIndex}/frame`);
+  return appendTimestamp(appendMediaAuth(`${baseUrl}/tasks/${safeTaskId}/steps/${safeIndex}/frame`));
 }
 
 module.exports = {

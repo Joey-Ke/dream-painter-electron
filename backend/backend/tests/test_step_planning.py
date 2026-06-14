@@ -262,7 +262,7 @@ class StepPlanningTests(unittest.TestCase):
             self.assertLess(_top_band_dark_pixels(clean_path), _top_band_dark_pixels(raw_path))
 
     def test_lineart_prompt_is_now_for_single_final_lineart(self) -> None:
-        with patch.dict("os.environ", {"SEEDREAM5_API_KEY": "test-key"}, clear=False):
+        with patch.dict("os.environ", {"SEEDREAM5_API_KEY": "test-key"}, clear=True):
             generator = RealSeedreamGenerator()
 
         prompt = generator._build_final_lineart_prompt(
@@ -281,7 +281,7 @@ class StepPlanningTests(unittest.TestCase):
         self.assertIn("Do not add a decorative border, plants, grass, water, puddles, reeds", prompt)
 
     def test_seedream5_defaults_use_real_endpoint_and_model(self) -> None:
-        with patch.dict("os.environ", {"SEEDREAM5_API_KEY": "test-key"}, clear=False):
+        with patch.dict("os.environ", {"SEEDREAM5_API_KEY": "test-key"}, clear=True):
             generator = RealSeedreamGenerator()
 
         self.assertEqual(
@@ -294,7 +294,7 @@ class StepPlanningTests(unittest.TestCase):
         self.assertEqual(generator.output_format, "png")
 
     def test_seedream5_download_supports_wrapped_response(self) -> None:
-        with patch.dict("os.environ", {"SEEDREAM5_API_KEY": "test-key"}, clear=False):
+        with patch.dict("os.environ", {"SEEDREAM5_API_KEY": "test-key"}, clear=True):
             generator = RealSeedreamGenerator()
 
         payload = {
