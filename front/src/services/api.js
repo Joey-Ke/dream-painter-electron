@@ -1,4 +1,4 @@
-// src/services/api.js
+// FILE: front/src/services/api.js
 let baseUrl = "";
 let token = "";
 
@@ -45,10 +45,44 @@ function getJob(jobId) {
   return http(`/jobs/${jobId}`, { method: "GET" });
 }
 
-// 静态文件：注意缓存（文档强调要加时间戳或 no-cache）:contentReference[oaicite:18]{index=18}
+// 静态文件：注意缓存
 function fileUrl(p) {
   const t = Date.now();
   return `${baseUrl}${p}?t=${t}`;
 }
 
-module.exports = { setBackendConfig, health, captureAndRecognize, confirmTarget, getJob, fileUrl };
+// 聊天接口（AI C）
+function chat(messages, model = null, includeTts = false) {
+  return http("/chat", {
+    method: "POST",
+    body: JSON.stringify({ messages, model, include_tts: includeTts }),
+  });
+}
+
+// TTS接口
+function textToSpeech(text, voice = null) {
+  return http("/tts", {
+    method: "POST",
+    body: JSON.stringify({ text, voice }),
+  });
+}
+
+// 生成视频接口
+function generateVideo(taskId, stepIndices = null, fps = 12) {
+  return http(`/tasks/${taskId}/generate-video`, {
+    method: "POST",
+    body: JSON.stringify({ task_id: taskId, step_indices: stepIndices, fps }),
+  });
+}
+
+module.exports = { 
+  setBackendConfig, 
+  health, 
+  captureAndRecognize, 
+  confirmTarget, 
+  getJob, 
+  fileUrl,
+  chat,
+  textToSpeech,
+  generateVideo,
+};
